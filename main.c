@@ -1,35 +1,3 @@
-/* ============================================================================
- * main.c
- *
- * DAXPY benchmark driver:  Z[i] = A * X[i] + Y[i]
- *
- * Calls two kernel implementations of DAXPY:
- *   1. daxpy_c    - plain C implementation (the "answer key" for correctness)
- *   2. daxpy_asm  - x86-64 NASM implementation (see daxpy.asm), using
- *                   scalar SSE2 floating point instructions (movsd/mulsd/addsd)
- *
- * For each vector size n, each kernel is:
- *   - run NUM_RUNS (>= 30) times, with only the kernel call itself timed
- *   - averaged to get a mean execution time in milliseconds
- *   - checked for correctness against the C version
- *   - the first 10 elements of Z are printed
- *
- * Build (Visual Studio / MSVC + NASM), from a "x64 Native Tools" prompt:
- *
- *     nasm -f win64 daxpy.asm -o daxpy.obj
- *     cl /O2 main.c daxpy.obj /Fe:daxpy_project.exe
- *
- * (Or add daxpy.asm's build step as a NASM custom build tool inside the
- *  Visual Studio project, and add daxpy.obj/daxpy.asm + main.c as project
- *  source files.)
- *
- * Note on vector sizes: the spec asks for n = 2^20, 2^24, 2^30. At 2^30
- * elements, three double vectors (X, Y, Z) would require 3 * 2^30 * 8 bytes
- * = 24 GB of RAM, which is not feasible on most machines. As permitted by
- * the project notes, 2^30 has been reduced to 2^28 below. Change N_SIZES
- * if your machine can support more (or less).
- * ============================================================================ */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,7 +5,7 @@
 #include <time.h>
 #include <windows.h>
 
-/* ---- x86-64 NASM kernel (see daxpy.asm) ---- */
+/* x86-64 NASM kernel (see daxpy.asm) */
 extern void daxpy_asm(int n, double a, double *x, double *y, double *z);
 
 #define NUM_RUNS   30
@@ -47,9 +15,7 @@ extern void daxpy_asm(int n, double a, double *x, double *y, double *z);
 static const long long N_SIZES[] = { 1LL << 20, 1LL << 24, 1LL << 28 };
 static const int NUM_SIZES = (int)(sizeof(N_SIZES) / sizeof(N_SIZES[0]));
 
-/* ---------------------------------------------------------------------- */
 /* C reference kernel                                                     */
-/* ---------------------------------------------------------------------- */
 void daxpy_c(int n, double a, double *x, double *y, double *z)
 {
     for (int i = 0; i < n; i++) {
@@ -57,9 +23,7 @@ void daxpy_c(int n, double a, double *x, double *y, double *z)
     }
 }
 
-/* ---------------------------------------------------------------------- */
 /* Helpers                                                                 */
-/* ---------------------------------------------------------------------- */
 static double *alloc_vec(long long n)
 {
     double *v = (double *)malloc(sizeof(double) * (size_t)n);
@@ -114,9 +78,7 @@ static double now_ms(void)
     return (double)t.QuadPart * 1000.0 / (double)freq.QuadPart;
 }
 
-/* ---------------------------------------------------------------------- */
-/* Benchmark driver for one kernel                                        */
-/* ---------------------------------------------------------------------- */
+/* Benchmark driver for one kernel */
 typedef void (*daxpy_fn)(int, double, double *, double *, double *);
 
 /* Summary statistics for one kernel's set of timed runs.
@@ -184,9 +146,7 @@ static KernelTiming time_kernel(const char *label, daxpy_fn fn, int n, double a,
     return t;
 }
 
-/* ---------------------------------------------------------------------- */
-/* Main                                                                    */
-/* ---------------------------------------------------------------------- */
+/* Main */
 int main(void)
 {
     srand(12345); /* fixed seed for reproducibility */
@@ -218,7 +178,7 @@ int main(void)
         fill_random(x, n);
         fill_random(y, n);
 
-        /* ---- C kernel ---- */
+        /* C kernel */
         printf("[C kernel]\n");
         printf("  A = %.6f\n", a);
         KernelTiming t_c = time_kernel("C", daxpy_c, n, a, x, y, z_c, NUM_RUNS);
@@ -231,14 +191,14 @@ int main(void)
         printf("  Average execution time over %d runs: %.6f ms  (median: %.6f ms, trimmed mean: %.6f ms)\n",
                NUM_RUNS, t_c.raw_mean, t_c.median, t_c.trimmed_mean);
 
-        /* ---- x86-64 ASM kernel ---- */
+        /* x86-64 ASM kernel */
         printf("[x86-64 ASM kernel]\n");
         KernelTiming t_asm = time_kernel("ASM", daxpy_asm, n, a, x, y, z_asm, NUM_RUNS);
         print_first10("  Z", z_asm, n);
         printf("  Average execution time over %d runs: %.6f ms  (median: %.6f ms, trimmed mean: %.6f ms)\n",
                NUM_RUNS, t_asm.raw_mean, t_asm.median, t_asm.trimmed_mean);
 
-        /* ---- correctness check: ASM output vs C "answer key" ---- */
+        /* correctness check: ASM output vs C */
         int ok = correctness_check(z_c, z_asm, n);
         printf("  Correctness check (ASM vs C): %s\n", ok ? "PASSED" : "FAILED");
 
