@@ -1,19 +1,16 @@
-; daxpy.asm
-; DAXPY kernel:  Z[i] = A * X[i] + Y[i]
-
+section .bss
+section .data
 section .text
 global daxpy_asm
 
 daxpy_asm:
-    ; fetch 5th argument (z pointer) from the stack
     mov     r10, [rsp+40]       ; r10 = z
 
-    ; n was passed in ecx; mov ecx,ecx zero-extends into rcx
     mov     ecx, ecx            ; rcx = n (zero-extended)
     xor     rax, rax            ; rax = loop index i = 0
 
     test    rcx, rcx
-    jle     .done               ; if n <= 0, nothing to do
+    jle     .done                ; if n <= 0, nothing to do
 
 .loop:
     movsd   xmm0, [r8 + rax*8]  ; xmm0 = x[i]
