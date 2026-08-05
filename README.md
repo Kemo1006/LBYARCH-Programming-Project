@@ -51,3 +51,18 @@ a. Github readme containing the following (debug and release mode; C and x86-64)
     iv. short videos (5-10mins) showing your source code, compilation, and execution of the C and x86-64 program
 
 b. Visual Studio project folder containing complete files (source code: C, x86-64, and all other required files) for others to load and execute your program.
+
+## How to Build
+1. Install NASM: https://www.nasm.us/
+2. After installing, add NASM to environment variables
+3. Windows Search **x64 Native Tools Command for VS**
+4. To run
+```
+    cd /d "project folder"
+
+    nasm -f win64 daxpy.asm -o daxpy.obj
+    
+    cl /O2 main.c daxpy.obj /Fe:daxpy_project.exe
+
+    daxpy_project.exe
+```
